@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>BookCache - 首页</title>
+    <!-- 引入 CSS -->
+    <link rel="stylesheet" href="/style/main.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>📚 书籍缓存管理系统</h1>
+
+    <!-- 操作按钮 -->
+    <a href="javascript:void(0);" class="btn-refresh" id="refreshBtn">🔄 刷新数据 (从Redis/DB)</a>
+
+    <!-- 数据表格 -->
+    <div class="table-responsive">
+        <table class="book-table">
+            <thead>
+            <tr>
+                <!-- 【修改】恢复为完整的7个表头 -->
+                <th>ID</th>
+                <th>书名</th>
+                <th>作者</th>
+                <th>出版社</th>
+                <th>出版日期</th>
+                <th>单价</th>
+                <th>总数</th>
+            </tr>
+            </thead>
+            <tbody id="bookList">
+            <!-- 数据将由 jQuery 动态插入到这里 -->
+            <tr><td colspan="7" class="loading">正在加载数据...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 引入 jQuery -->
+<script src="/script/jquery.min.js"></script>
+
+<!-- 自定义业务逻辑脚本 -->
+<script>
+    $(document).ready(function () {
+        // 定义获取数据的函数
+        function fetchBooks() {
+            // 【修改】显示加载状态 (colspan 改为 7)
+            $("#bookList").html('<tr><td colspan="7" class="loading">⚡ 正在从后端获取数据...</td></tr>');
+
+            // 使用 jQuery AJAX 调用后端 REST 接口
+            $.ajax({
+                url: '/api/books',
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    console.log("获取数据成功:", response);
+
+                    // 清空旧数据
+                    var $tbody = $("#bookList");
+                    $tbody.empty();
+
+                    // 兼容直接返回数组或包含在 data 属性中的情况
+                    var books = response.data || response;
+
+                    if (books && books.length > 0) {
+                        // 遍历新数据并生成表格行
+                        $.each(books, function (index, book) {
+                            // 处理空值，防止 undefined 显示在页面上
+                            var publisher = book.publisher || '-';
+                            var publishDate = book.publishDate || '-'; // 对应后端的 @JsonFormat 字段
+                            var stock = book.stock || 0;
+                            var price = book.price ? parseFloat(book.price).toFixed(2) : '0.00';
+
+                            // 【修改】构建表格行 HTML，包含所有7个字段
+                            var row = '<tr>' +
+                                '<td>' + book.id + '</td>' +
+                                '<td><strong>' + (book.name || '') + '</strong></td>' +
+                                '<td>' + (book.author || '-') + '</td>' +
+                                '<td>' + publisher + '</td>' +
+                                '<td>' + publishDate + '</td>' +
+                                '<td style="color:#e67e22">¥' + price + '</td>' +
+                                '<td style="color:#27ae60; font-weight:bold">' + stock + '</td>' +
+                                '</tr>';
+
+                            $tbody.append(row);
+                        });
+                    } else {
+                        $tbody.append('<tr><td colspan="7" class="loading">暂无书籍数据</td></tr>');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("获取数据失败:", error);
+                    $("#bookList").html('<tr><td colspan="7" class="loading" style="color:red"> 数据加载失败: ' + error + '</td></tr>');
+                }
+            });
+        }
+
+        // 页面加载完成后自动执行一次
+        fetchBooks();
+
+        // 绑定刷新按钮点击事件
+        $("#refreshBtn").click(function () {
+            fetchBooks();
+        });
+    });
+</script>
+
+</body>
+</html>
