@@ -1,0 +1,23 @@
+﻿# 编译产物
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 日志
+*.log
+
+# 本地配置（真实密码放这里，不要提交）
+application-local.properties
+
+# 数据集
+data/
+*.csv
+!sample.csv
+
+# 模型文件
+model/
+*.h5
